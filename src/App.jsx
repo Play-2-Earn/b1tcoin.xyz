@@ -1,237 +1,260 @@
 import React, { useState, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faRocket,
+  faShieldHalved,
+  faChartLine,
+} from "@fortawesome/free-solid-svg-icons";
 
-import axios from "axios";
+// Cyberpunk animations
+const glitch = keyframes`
+  0% { text-shadow: 0.05em 0 0 rgba(255,0,0,.75), -0.05em -0.025em 0 rgba(0,255,0,.75), -0.025em 0.05em 0 rgba(0,0,255,.75); }
+  14% { text-shadow: 0.05em 0 0 rgba(255,0,0,.75), -0.05em -0.025em 0 rgba(0,255,0,.75), -0.025em 0.05em 0 rgba(0,0,255,.75); }
+  15% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,.75), 0.025em 0.025em 0 rgba(0,255,0,.75), -0.05em -0.05em 0 rgba(0,0,255,.75); }
+  49% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,.75), 0.025em 0.025em 0 rgba(0,255,0,.75), -0.05em -0.05em 0 rgba(0,0,255,.75); }
+  50% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,.75), 0.05em 0 0 rgba(0,255,0,.75), 0 -0.05em 0 rgba(0,0,255,.75); }
+  99% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,.75), 0.05em 0 0 rgba(0,255,0,.75), 0 -0.05em 0 rgba(0,0,255,.75); }
+  100% { text-shadow: -0.025em 0 0 rgba(255,0,0,.75), -0.025em -0.025em 0 rgba(0,255,0,.75), -0.025em -0.05em 0 rgba(0,0,255,.75); }
+`;
 
-// Animated gradient background
-const gradientAnimation = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+const scanline = keyframes`
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
 `;
 
 const Container = styled.div`
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e);
-  background-size: 400% 400%;
-  animation: ${gradientAnimation} 15s ease infinite;
-  padding: 20px;
+  background: #0a0a0a;
+  color: #00f3ff;
+  font-family: "Courier New", monospace;
   position: relative;
   overflow: hidden;
+  padding: 2rem;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      transparent 50%,
+      rgba(0, 243, 255, 0.1) 50%
+    );
+    background-size: 5px 5px;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      0deg,
+      transparent 0%,
+      rgba(0, 243, 255, 0.1) 2%,
+      transparent 4%
+    );
+    animation: ${scanline} 6s linear infinite;
+    pointer-events: none;
+  }
 `;
 
-const ContentBox = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.95);
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  max-width: 1000px;
-  width: 90%;
-  z-index: 1;
+const CyberHeader = styled(motion.h1)`
+  font-size: 4.5rem;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 2rem 0;
   position: relative;
-`;
+  animation: ${glitch} 2s infinite;
+  text-shadow: 0 0 10px #00f3ff;
 
-const DomainHeader = styled(motion.h1)`
-  font-family: "Courier New", monospace;
-  font-size: 4rem;
-  color: #2c3e50;
-  margin: 0 0 20px 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  &::before {
+    content: "▶▶▶ ${(props) => props.children} ◀◀◀";
+    position: absolute;
+    color: rgba(0, 243, 255, 0.3);
+    width: 100%;
+    left: 0;
+    top: -0.5em;
+    font-size: 0.6em;
+  }
 
   @media (max-width: 768px) {
-    font-size: 2.8rem;
+    font-size: 3rem;
   }
 `;
 
-const FeatureList = styled.div`
+const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 25px;
-  margin: 40px 0;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 3rem auto;
+  position: relative;
+  z-index: 1;
 `;
 
-const FeatureItem = styled(motion.div)`
-  padding: 25px;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+const Card = styled(motion.div)`
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #00f3ff;
+  padding: 2rem;
+  border-radius: 5px;
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+  position: relative;
+  overflow: hidden;
 
-  &:hover {
-    transform: translateY(-5px);
+  &::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent,
+      rgba(0, 243, 255, 0.2),
+      transparent
+    );
+    transform: rotate(45deg);
   }
 `;
 
-const NewsTicker = styled(motion.div)`
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 15px;
-  border-radius: 8px;
-  margin: 20px 0;
-  width: 100%;
+const TerminalText = styled.div`
+  color: #00f3ff;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  position: relative;
+
+  strong {
+    color: #ff003c;
+    font-weight: normal;
+  }
+`;
+
+const CtaButton = styled(motion.a)`
+  display: block;
+  width: fit-content;
+  margin: 3rem auto;
+  padding: 1.5rem 3rem;
+  background: #00f3ff;
+  color: #0a0a0a;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: bold;
+  border: 2px solid #00f3ff;
+  position: relative;
   overflow: hidden;
+  transition: 0.3s all;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    transition: 0.5s;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
 `;
 
-const CryptoStats = styled.div`
-  display: flex;
-  justify-content: space-around;
-  margin: 30px 0;
-  flex-wrap: wrap;
-  gap: 20px;
-`;
-
-const StatItem = styled(motion.div)`
-  text-align: center;
-  padding: 15px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-  min-width: 150px;
-`;
-
-const FloatingBitcoin = styled(motion.div)`
-  position: absolute;
-  font-size: 2rem;
-  opacity: 0.3;
-  pointer-events: none;
+const FeatureIcon = styled(FontAwesomeIcon)`
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 5px #00f3ff);
 `;
 
 function App() {
-  const [price, setPrice] = useState(null);
-  const [stats, setStats] = useState(null);
-
-  const particlesInit = async (engine) => {
-    await loadFull(engine);
-  };
+  const [time, setTime] = useState(new Date());
 
   useEffect(() => {
-    const fetchPrice = async () => {
-      try {
-        const response = await axios.get(
-          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
-        );
-        setPrice(response.data.bitcoin.usd);
-      } catch (error) {
-        console.error("Error fetching Bitcoin price:", error);
-      }
-    };
-
-    fetchPrice();
-    const interval = setInterval(fetchPrice, 60000);
-    return () => clearInterval(interval);
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   return (
     <Container>
-      {[...Array(10)].map((_, i) => (
-        <FloatingBitcoin
-          key={i}
-          initial={{ y: 0, x: Math.random() * 100 }}
-          animate={{
-            y: [0, 100, 0],
-            x: Math.random() * 100,
-            rotate: [0, 360],
-          }}
-          transition={{
-            duration: 10 + Math.random() * 10,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        >
-          ₿
-        </FloatingBitcoin>
-      ))}
+      <CyberHeader initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        b1tcoinx.xyz
+      </CyberHeader>
 
-      <ContentBox
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+      <Grid>
+        <Card
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <FeatureIcon icon={faRocket} />
+          <TerminalText>
+            INITIALIZING <strong>b1tcoinx.xyz</strong> PROTOCOL
+            <br />
+            █ LOADING NEXT-GEN TRADING PLATFORM
+            <br />
+            █ CRYPTO-OPTIMIZED ARCHITECTURE ACTIVE
+            <br />█ REAL-TIME BLOCKCHAIN ANALYSIS ENABLED
+          </TerminalText>
+        </Card>
+
+        <Card
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <FeatureIcon icon={faShieldHalved} />
+          <TerminalText>
+            SECURITY STATUS
+            <br />█ QUANTUM-RESISTANT ENCRYPTION: <strong>ACTIVE</strong>
+            <br />█ MULTISIG WALLETS: <strong>ONLINE</strong>
+            <br />█ COLD STORAGE VAULTS: <strong>SECURED</strong>
+            <br />█ <strong>b1tcoinx.xyz</strong> DEFENSE GRID: OPERATIONAL
+          </TerminalText>
+        </Card>
+
+        <Card
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          <FeatureIcon icon={faChartLine} />
+          <TerminalText>
+            SYSTEM METRICS
+            <br />
+            █ PLATFORM UPTIME: 99.999%
+            <br />█ TRANSACTION SPEED: <strong>4500 TPS</strong>
+            <br />█ ACTIVE USERS: <strong>1.2M+</strong>
+            <br />█ CURRENT TIME: {time.toLocaleTimeString()}
+          </TerminalText>
+        </Card>
+      </Grid>
+
+      <CtaButton
+        href="https://www.b1tcoin.ai/"
+        target="_blank"
+        rel="noopener noreferrer"
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
       >
-        <DomainHeader
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          b1tcoinx.xyz
-        </DomainHeader>
-
-        <NewsTicker
-          initial={{ x: "100%" }}
-          animate={{ x: "-100%" }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        >
-          🚀 Next-Generation Crypto Trading Platform • 🔒 Secure & Decentralized
-          • 💸 Lowest Fees in the Market
-        </NewsTicker>
-
-        <CryptoStats>
-          <StatItem
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h3>BTC Price</h3>
-            <p>${price ? price.toLocaleString() : "Loading..."}</p>
-          </StatItem>
-          <StatItem
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            <h3>24h Volume</h3>
-            <p>$42B+</p>
-          </StatItem>
-          <StatItem
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <h3>Market Cap</h3>
-            <p>$800B+</p>
-          </StatItem>
-        </CryptoStats>
-
-        <FeatureList>
-          {["Instant Exchange", "Cold Storage", "Margin Trading"].map(
-            (feature, i) => (
-              <FeatureItem
-                key={feature}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.2 + 0.8 }}
-              >
-                <h3>{feature}</h3>
-                <p>Powered by b1tcoinx.xyz's proprietary technology</p>
-              </FeatureItem>
-            )
-          )}
-        </FeatureList>
-
-        <motion.a
-          href="https://www.b1tcoin.ai/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "inline-block",
-            background: "linear-gradient(45deg, #23d5ab, #23a6d5)",
-            color: "white",
-            padding: "15px 40px",
-            borderRadius: "30px",
-            textDecoration: "none",
-            marginTop: "30px",
-            fontSize: "1.2rem",
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Launch Trading Platform
-        </motion.a>
-      </ContentBox>
+        ACCESS TRADING TERMINAL
+      </CtaButton>
     </Container>
   );
 }
